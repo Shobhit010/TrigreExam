@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosError } from 'axios';
+import axios, { type AxiosInstance, type AxiosError } from "axios";
 
 // ---- User interface reflecting RUPPI data shape ------------------------
 // AuthContext.tsx imports this type — changes here propagate automatically.
@@ -8,7 +8,7 @@ export interface User {
   email: string;
   firstname: string;
   lastname: string;
-  name: string;         // Maps from RUPPI "firstname" + "lastname"
+  name: string; // Maps from RUPPI "firstname" + "lastname"
   mobile: string;
   profile_pic: string | null;
   class?: string;
@@ -17,8 +17,8 @@ export interface User {
 }
 
 // ---- localStorage keys -------------------------------------------------
-const TOKEN_KEY = 'trigreexam_auth_token';
-const USER_KEY = 'trigreexam_auth_user';
+const TOKEN_KEY = "trigreexam_auth_token";
+const USER_KEY = "trigreexam_auth_user";
 
 // ---- Axios instance ----------------------------------------------------
 // VITE_API_BASE_URL is defined in frontend/.env
@@ -27,20 +27,22 @@ const USER_KEY = 'trigreexam_auth_user';
 // it from the request body (application/json for objects, multipart/form-data
 // for FormData). A hard-coded default can override FormData auto-detection.
 const apiClient: AxiosInstance = axios.create({
-  baseURL: (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '',
+  baseURL: (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "",
   timeout: 15000,
 });
 
 // Attach JWT to every outgoing request
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = "80DF6APRL211988KF3D95824CDBBAE6A168";
+    const student_token = localStorage.getItem(TOKEN_KEY);
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
+    // config.headers["token"] = student_token;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // On 401: clear stale session — PrivateRoutes will redirect to sign-in.
@@ -48,8 +50,8 @@ apiClient.interceptors.request.use(
 // Do NOT clear the session — serve cached data and show a soft UI warning instead.
 apiClient.interceptors.response.use(
   (response) => {
-    if (response.headers['x-session-degraded'] === 'true') {
-      window.dispatchEvent(new Event('auth:session-degraded'));
+    if (response.headers["x-session-degraded"] === "true") {
+      window.dispatchEvent(new Event("auth:session-degraded"));
     }
     return response;
   },
@@ -60,7 +62,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem(USER_KEY);
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // ---- Backend response shapes -------------------------------------------
@@ -99,11 +101,14 @@ interface ApiResponse<T> {
 // The exported shape must remain stable — AuthContext.tsx depends on it.
 export const authService = {
   login: async (username: string, password: string): Promise<User> => {
-    const response = await apiClient.post<LoginApiResponse>('/api/auth/login', {
-      username,
-      password,
-      deviceType: 'web',
-    });
+    const response = await apiClient.post<LoginApiResponse>(
+      "auth/login/65c363d1af4e065da616b1a1",
+      {
+        username,
+        password,
+        deviceType: "web",
+      },
+    );
 
     const { token, user } = response.data.data;
 
@@ -114,26 +119,41 @@ export const authService = {
   },
 
   // AUTH-002 — Register (multipart/form-data for optional profile_pic)
-  register: async (formData: FormData): Promise<{ student_id: string; requires_verification: boolean }> => {
-    const response = await apiClient.post<RegisterApiResponse>('/api/auth/register', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  register: async (
+    formData: FormData,
+  ): Promise<{ student_id: string; requires_verification: boolean }> => {
+    const response = await apiClient.post<RegisterApiResponse>(
+      "/api/auth/register",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
     return response.data.data;
   },
 
   // AUTH-003 — Forgot Password (send OTP to mobile)
   forgotPassword: async (mobile: string): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/forgot-password', { mobile });
+    await apiClient.post<SimpleApiResponse>("/api/auth/forgot-password", {
+      mobile,
+    });
   },
 
   // AUTH-004 — Verify OTP
   verifyOtp: async (mobile: string, otp: string): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/verify-otp', { mobile, otp });
+    await apiClient.post<SimpleApiResponse>("/api/auth/verify-otp", {
+      mobile,
+      otp,
+    });
   },
 
   // AUTH-005 — Reset Password
-  resetPassword: async (mobile: string, password: string, confirmPassword: string): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/reset-password', {
+  resetPassword: async (
+    mobile: string,
+    password: string,
+    confirmPassword: string,
+  ): Promise<void> => {
+    await apiClient.post<SimpleApiResponse>("/api/auth/reset-password", {
       mobile,
       password,
       confirm_password: confirmPassword,
@@ -142,12 +162,14 @@ export const authService = {
 
   // AUTH-006 — Resend Verification Code (email)
   resendCode: async (studentId: string): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/resend-code', { student_id: studentId });
+    await apiClient.post<SimpleApiResponse>("/api/auth/resend-code", {
+      student_id: studentId,
+    });
   },
 
   // AUTH-007 — Verify Student OTP (signup email OTP verification)
   verifyStudentOtp: async (studentId: string, code: string): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/verify-student', {
+    await apiClient.post<SimpleApiResponse>("/api/auth/verify-student", {
       student_id: studentId,
       code,
     });
@@ -157,9 +179,9 @@ export const authService = {
   changePassword: async (
     oldPassword: string,
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ): Promise<void> => {
-    await apiClient.post<SimpleApiResponse>('/api/auth/change-password', {
+    await apiClient.post<SimpleApiResponse>("/api/auth/change-password", {
       old_password: oldPassword,
       new_password: newPassword,
       confirm_password: confirmPassword,
@@ -187,7 +209,8 @@ export const authService = {
   },
 
   getProfile: async (): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User>>('/api/auth/profile');
+    const response =
+      await apiClient.get<ApiResponse<User>>("/api/auth/profile");
     const user = response.data.data;
 
     // Update localStorage with fresh data
@@ -197,7 +220,7 @@ export const authService = {
   },
 
   updateProfile: async (data: Partial<User>): Promise<void> => {
-    await apiClient.post('/api/auth/update-profile', data);
+    await apiClient.post("/api/auth/update-profile", data);
     await authService.getProfile();
   },
 
@@ -205,7 +228,7 @@ export const authService = {
   // Axios 1.x automatically detects browser FormData and sets the correct
   // 'multipart/form-data; boundary=...' Content-Type — no manual override needed.
   updateProfileFormData: async (formData: FormData): Promise<void> => {
-    await apiClient.post('/api/auth/update-profile', formData);
+    await apiClient.post("/api/auth/update-profile", formData);
   },
 
   // Exposed for other services that need authenticated API access
